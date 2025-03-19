@@ -1,0 +1,3 @@
+{
+    "ignorePatterns": ["src/utils/database.types.ts"]
+}
