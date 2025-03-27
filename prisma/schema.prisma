@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ユーザーモデル
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  profile   String? // プロフィール文
+  avatarUrl String? // プロフィール画像URL
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  bookPosts  BookPost[] // ユーザーの書籍投稿
+  likes      Like[] // ユーザーがつけたいいね
+  replies    Reply[] // ユーザーの返信
+  followedBy Follows[]  @relation("following")
+  following  Follows[]  @relation("follower")
+}
+
+// 書籍モデル
+model Book {
+  id          String   @id @default(uuid())
+  googleId    String   @unique // Google Books APIのID
+  title       String
+  description String?
+  authors     String? // 著者（カンマ区切り）
+  thumbnail   String? // サムネイルURL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  bookPosts BookPost[] // この本が登録されている書籍投稿
+}
+
+// 書籍投稿モデル（ユーザーと書籍の中間テーブル + 追加情報）
+model BookPost {
+  id        String      @id @default(uuid())
+  userId    String
+  bookId    String
+  rank      Int? // 5段階評価 (1-5)
+  status    ReadStatus? // 読書状態
+  comment   String? // レビューコメント
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // リレーション
+  user    User    @relation(fields: [userId], references: [id])
+  book    Book    @relation(fields: [bookId], references: [id])
+  likes   Like[] // この書籍投稿へのいいね
+  replies Reply[] // この書籍投稿への返信
+
+  @@unique([userId, bookId]) // 同じユーザーが同じ本を重複して登録できないように
+}
+
+// いいねモデル
+model Like {
+  id         String   @id @default(uuid())
+  userId     String
+  bookPostId String
+  createdAt  DateTime @default(now())
+
+  // リレーション
+  user     User     @relation(fields: [userId], references: [id])
+  bookPost BookPost @relation(fields: [bookPostId], references: [id])
+
+  @@unique([userId, bookPostId]) // 同じユーザーが同じ書籍投稿に重複していいねできないように
+}
+
+// 返信モデル
+model Reply {
+  id         String   @id @default(uuid())
+  content    String
+  userId     String
+  bookPostId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // リレーション
+  user     User     @relation(fields: [userId], references: [id])
+  bookPost BookPost @relation(fields: [bookPostId], references: [id])
+}
+
+// フォロー関係モデル
+model Follows {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  // リレーション
+  follower  User @relation("follower", fields: [followerId], references: [id])
+  following User @relation("following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
+
+// 読書状態の列挙型
+enum ReadStatus {
+  UNREAD // 未読
+  READING // 読書中
+  COMPLETED // 読了
+  ON_HOLD // 中断
+  PLAN_TO_READ // 読みたい
+}
