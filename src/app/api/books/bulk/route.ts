@@ -1,8 +1,8 @@
 import { prisma } from '@/utils/prisma';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // POST: 複数のgoogleIdに該当するBookを取得
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const { googleIds } = await req.json();
 
   if (!Array.isArray(googleIds) || googleIds.length === 0) {

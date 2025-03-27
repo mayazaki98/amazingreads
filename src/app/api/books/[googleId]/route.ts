@@ -1,9 +1,12 @@
 import { prisma } from '@/utils/prisma';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // GET: 特定のBookを取得
-export async function GET(req: Request, { params }: { params: { googleId: string } }) {
-  const { googleId } = params;
+export async function GET(
+  request: NextRequest,
+  context: { params: { googleId: string } }
+) {
+  const { googleId } = context.params;
   const book = await prisma.book.findUnique({
     where: { googleId },
   });
@@ -16,8 +19,8 @@ export async function GET(req: Request, { params }: { params: { googleId: string
 }
 
 // POST: 新しいBookを作成
-export async function POST(req: Request) {
-  const data = await req.json();
+export async function POST(request: NextRequest) {
+  const data = await request.json();
   try {
     const newBook = await prisma.book.create({
       data,
@@ -29,9 +32,12 @@ export async function POST(req: Request) {
 }
 
 // PUT: 特定のBookを更新
-export async function PUT(req: Request, { params }: { params: { googleId: string } }) {
-  const { googleId } = params;
-  const data = await req.json();
+export async function PUT(
+  request: NextRequest,
+  context: { params: { googleId: string } }
+) {
+  const { googleId } = context.params;
+  const data = await request.json();
 
   try {
     const updatedBook = await prisma.book.update({
@@ -45,8 +51,11 @@ export async function PUT(req: Request, { params }: { params: { googleId: string
 }
 
 // DELETE: 特定のBookを削除
-export async function DELETE(req: Request, { params }: { params: { googleId: string } }) {
-  const { googleId } = params;
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { googleId: string } }
+) {
+  const { googleId } = context.params;
 
   try {
     await prisma.book.delete({
