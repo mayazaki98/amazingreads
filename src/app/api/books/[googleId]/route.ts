@@ -15,19 +15,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ googleId
     return Response.json(book);
 }
 
-// POST: 新しいBookを作成
-export async function POST(req: Request) {
-    const data = await req.json();
-    try {
-        const newBook = await prisma.book.create({
-            data,
-        });
-        return Response.json(newBook, { status: 201 });
-    } catch (error) {
-        return Response.json({ error: 'Failed to create book', details: error }, { status: 400 });
-    }
-}
-
 // PUT: 特定のBookを更新
 export async function PUT(req: Request, { params }: { params: Promise<{ googleId: string }> }) {
     const { googleId } = await params;
