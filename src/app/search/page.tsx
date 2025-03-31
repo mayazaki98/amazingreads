@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { Book, BookPost } from '@prisma/client';
 
 /** 書籍の情報 */
 interface AmazingBook {
@@ -138,9 +139,55 @@ export default function NewPage() {
      * 書籍を登録する
      * @param book 登録する書籍
      */
-    const handleRegister = (book: AmazingBook) => {
-        console.log('Registering book:', book);
-        // 登録処理をここに追加
+    const handleRegister = async (book: AmazingBook) => {
+        console.log('handleRegister book:', book);
+
+        // 書籍の登録処理を実行する
+        let registerdBook: Book;
+        try {
+            const responseBook = await fetch('/api/books/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    googleId: book.id,
+                    title: book.title,
+                    description: book.description,
+                    authors: book.authors,
+                    thumbnail: book.thumbnail,
+                }),
+            });
+
+            registerdBook = await responseBook.json();
+            console.log('/api/books/ POST result:', registerdBook);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('書籍の登録に失敗しました');
+            return;
+        }
+
+        // 書籍投稿の登録処理を実行する
+        let registerdPost: BookPost;
+        try {
+            const responsePost = await fetch('/api/posts/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: '0001',
+                    bookId: registerdBook.id,
+                }),
+            });
+
+            registerdPost = await responsePost.json();
+            console.log('/api/posts/ POST result:', registerdPost);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('書籍投稿の登録に失敗しました');
+            return;
+        }
     };
 
     return (
