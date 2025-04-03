@@ -76,55 +76,49 @@ export default function NewPage() {
         setIsLoading(true);
         console.log('handleNextSearch searchQuery:', searchQuery, 'startIndex:', startIndex);
         let nextIndex = startIndex;
-        let results: AmazingBook[] = [];
+        let amazingBooks: AmazingBook[] = [];
 
-        while (true) {
-            try {
-                const response = await fetch(
-                    `https://www.googleapis.com/books/v1/volumes?q=intitle:${searchQuery}&startIndex=${nextIndex}&maxResults=${MAX_BY_REQUEST}&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
-                );
-                const data: GoogleBooksResponse = await response.json();
-                console.log('Search results:', data);
-
-                // レスポンスにitemsがない場合はループを終了
-                if (!data.items) break;
-
-                // 追加の結果がない場合はループを終了
-                if (data.items.length === 0) break;
-
-                // AmazingBookに変換する
-                const amazingBooks = data.items.map((googleBook) => {
-                    return {
-                        id: googleBook.id,
-                        title: googleBook.volumeInfo?.title,
-                        description: googleBook.volumeInfo?.description,
-                        authors: googleBook.volumeInfo?.authors?.join(','),
-                        thumbnail: googleBook.volumeInfo?.imageLinks?.thumbnail,
-                        isPosted: false,
-                    };
-                });
-
-                // 重複を排除する
-                const uniqueResults = amazingBooks
-                    .filter((book) => !results.some((result) => result.id === book.id))
-                    .filter((book) => !searchResults.some((result) => result.id === book.id));
-
-                // 結果を追加する
-                results = [...results, ...uniqueResults];
-
-                if (results.length === MAX_BY_REQUEST) {
-                    // 結果がMAX_BY_REQUEST件なら、次の検索でさらに検索結果が取得できる可能性あり
-                    nextIndex += data.items.length;
-                }
-
-                break;
-            } catch (error) {
-                console.error('Error:', error);
-                break;
-            }
-        }
-        // 検索結果の書籍IDを使ってBookPostを取得
         try {
+            // Google Books APIから検索結果を取得する
+            const response = await fetch(
+                `https://www.googleapis.com/books/v1/volumes?q=intitle:${searchQuery}&startIndex=${nextIndex}&maxResults=${MAX_BY_REQUEST}&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
+            );
+            const data: GoogleBooksResponse = await response.json();
+            console.log('Search results:', data);
+
+            // 追加の結果がない場合は終了
+            if (!data.items || data.items.length === 0) {
+                return;
+            }
+
+            if (data.items.length === MAX_BY_REQUEST) {
+                // 結果がMAX_BY_REQUEST件なら、次の検索でさらに検索結果が取得できる可能性ありなので、
+                // 次の検索インデックスを更新する
+                nextIndex += data.items.length;
+            }
+
+            // 既存の検索結果と重複する書籍を除外する
+            const existingIds = new Set(searchResults.map((book) => book.id));
+            data.items = data.items.filter((item) => !existingIds.has(item.id));
+
+            // AmazingBookに変換する
+            amazingBooks = data.items.map((googleBook) => {
+                return {
+                    id: googleBook.id,
+                    title: googleBook.volumeInfo?.title,
+                    description: googleBook.volumeInfo?.description,
+                    authors: googleBook.volumeInfo?.authors?.join(','),
+                    thumbnail: googleBook.volumeInfo?.imageLinks?.thumbnail,
+                    isPosted: false,
+                };
+            });
+        } catch (error) {
+            console.error('Error:', error);
+            return;
+        }
+
+        try {
+            // 検索結果の書籍IDを使ってBookPostを取得
             const response = await fetch('/api/posts/bulk', {
                 method: 'POST',
                 headers: {
@@ -132,31 +126,35 @@ export default function NewPage() {
                 },
                 body: JSON.stringify({
                     userId: '0001',
-                    googleIds: results.map((book) => book.id),
+                    googleIds: amazingBooks.map((book) => book.id),
                 }),
             });
             const bookPosts: BookPost[] = await response.json();
-            console.log('BookPosts:', bookPosts);
-            results.forEach((book) => {
-                const postedBook = bookPosts.find((post) => post.book.googleId === book.id);
-                if (postedBook) {
-                    book.isPosted = true;
-                }
-            });
-            console.log('results:', results);
+            if (bookPosts && bookPosts.length > 0) {
+                // BookPost が存在する書籍をマーキング
+                console.log('BookPosts:', bookPosts);
+                amazingBooks.forEach((book) => {
+                    const postedBook = bookPosts.find((post) => post.book.googleId === book.id);
+                    if (postedBook) {
+                        book.isPosted = true; // 書籍が投稿されていることをマーキング
+                    }
+                });
+                console.log('amazingBooks:', amazingBooks);
+            }
         } catch (error) {
             console.error('Failed to fetch bookPosts:', error);
         }
 
         if (startIndex === 0) {
             // 最初の検索の場合
-            setSearchResults(results); // 結果を上書き保存する
-        } else if (results.length > 0) {
+            setSearchResults(amazingBooks); // 結果を上書き保存する
+        } else if (amazingBooks.length > 0) {
             // 2回目以降の検索の場合
-            setSearchResults([...searchResults, ...results]); // 結果を追加する
+            setSearchResults([...searchResults, ...amazingBooks]); // 結果を追加する
         }
 
         if (startIndex !== nextIndex) {
+            // インデックスの更新があった場合
             setNextSearchIndex(nextIndex); // 次のインデックスを保存する
         } else {
             // インデックス更新が無ければこれ以上の検索は不要なので0にする
