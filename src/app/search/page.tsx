@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Book, BookPost } from '@prisma/client';
+import { Book, BookPost as PrismaBookPost } from '@prisma/client';
 
 /** 書籍の情報 */
 interface AmazingBook {
@@ -16,6 +16,8 @@ interface AmazingBook {
     authors: string;
     /** サムネイルのURL */
     thumbnail: string;
+    /** 書籍が投稿されているかどうか */
+    isPosted: boolean;
 }
 
 /** Google Books APIのレスポンス */
@@ -51,6 +53,12 @@ interface GoogleIdentifier {
     /** 識別子の値 */
     identifier: string;
 }
+
+type BookPost = PrismaBookPost & {
+    book: {
+        googleId: string;
+    };
+};
 
 export default function NewPage() {
     const MAX_BY_REQUEST = 40; // 1リクエスト当たりの取得数
@@ -92,6 +100,7 @@ export default function NewPage() {
                         description: googleBook.volumeInfo?.description,
                         authors: googleBook.volumeInfo?.authors?.join(','),
                         thumbnail: googleBook.volumeInfo?.imageLinks?.thumbnail,
+                        isPosted: false,
                     };
                 });
 
@@ -114,9 +123,30 @@ export default function NewPage() {
                 break;
             }
         }
-
-        // 結果を更新する前に少し待機して、ローディング表示を確実に見せる
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // 検索結果の書籍IDを使ってBookPostを取得
+        try {
+            const response = await fetch('/api/posts/bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: '0001',
+                    googleIds: results.map((book) => book.id),
+                }),
+            });
+            const bookPosts: BookPost[] = await response.json();
+            console.log('BookPosts:', bookPosts);
+            results.forEach((book) => {
+                const postedBook = bookPosts.find((post) => post.book.googleId === book.id);
+                if (postedBook) {
+                    book.isPosted = true;
+                }
+            });
+            console.log('results:', results);
+        } catch (error) {
+            console.error('Failed to fetch bookPosts:', error);
+        }
 
         if (startIndex === 0) {
             // 最初の検索の場合
