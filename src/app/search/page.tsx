@@ -83,6 +83,11 @@ export default function NewPage() {
             const response = await fetch(
                 `https://www.googleapis.com/books/v1/volumes?q=intitle:${searchQuery}&startIndex=${nextIndex}&maxResults=${MAX_BY_REQUEST}&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
             );
+
+            if (!response.ok) {
+                throw new Error(`検索結果の取得に失敗しました: ${response.status}`);
+            }
+
             const data: GoogleBooksResponse = await response.json();
             console.log('Search results:', data);
 
@@ -114,6 +119,7 @@ export default function NewPage() {
             });
         } catch (error) {
             console.error('Error:', error);
+            alert('検索に失敗しました');
             return;
         }
 
@@ -129,6 +135,11 @@ export default function NewPage() {
                     googleIds: amazingBooks.map((book) => book.id),
                 }),
             });
+
+            if (!response.ok) {
+                throw new Error(`投稿の取得に失敗しました: ${response.status}`);
+            }
+
             const bookPosts: BookPost[] = await response.json();
             if (bookPosts && bookPosts.length > 0) {
                 // BookPost が存在する書籍をマーキング
@@ -143,6 +154,8 @@ export default function NewPage() {
             }
         } catch (error) {
             console.error('Failed to fetch bookPosts:', error);
+            alert('投稿の取得に失敗しました');
+            return;
         }
 
         if (startIndex === 0) {
@@ -173,7 +186,7 @@ export default function NewPage() {
         // 書籍の登録処理を実行する
         let registerdBook: Book;
         try {
-            const responseBook = await fetch('/api/books/', {
+            const response = await fetch('/api/books/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -187,18 +200,22 @@ export default function NewPage() {
                 }),
             });
 
-            registerdBook = await responseBook.json();
+            if (!response.ok) {
+                throw new Error(`書籍登録に失敗しました: ${response.status}`);
+            }
+
+            registerdBook = await response.json();
             console.log('/api/books/ POST result:', registerdBook);
         } catch (error) {
             console.error('Error:', error);
-            alert('書籍の登録に失敗しました');
+            alert('書籍登録に失敗しました');
             return;
         }
 
         // 書籍投稿の登録処理を実行する
         let registerdPost: BookPost;
         try {
-            const responsePost = await fetch('/api/posts/', {
+            const response = await fetch('/api/posts/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -209,11 +226,15 @@ export default function NewPage() {
                 }),
             });
 
-            registerdPost = await responsePost.json();
+            if (!response.ok) {
+                throw new Error(`投稿に失敗しました: ${response.status}`);
+            }
+
+            registerdPost = await response.json();
             console.log('/api/posts/ POST result:', registerdPost);
         } catch (error) {
             console.error('Error:', error);
-            alert('書籍投稿の登録に失敗しました');
+            alert('投稿に失敗しました');
             return;
         }
     };
