@@ -237,6 +237,10 @@ export default function NewPage() {
             alert('投稿に失敗しました');
             return;
         }
+
+        // 登録した書籍のisPostedをtrueに設定し、検索結果を更新
+        const updatedResults = searchResults.map((item) => (item.id === book.id ? { ...item, isPosted: true } : item));
+        setSearchResults(updatedResults);
     };
 
     /**
