@@ -102,9 +102,11 @@ export default function NewPage() {
                 nextIndex += data.items.length;
             }
 
-            // 既存の検索結果と重複する書籍を除外する
-            const existingIds = new Set(searchResults.map((book) => book.id));
-            data.items = data.items.filter((item) => !existingIds.has(item.id));
+            if (startIndex > 0) {
+                // 既存の検索結果と重複する書籍を除外する
+                const existingIds = new Set(searchResults.map((book) => book.id));
+                data.items = data.items.filter((item) => !existingIds.has(item.id));
+            }
 
             // AmazingBookに変換する
             amazingBooks = data.items.map((googleBook) => {
