@@ -218,6 +218,14 @@ export default function NewPage() {
         }
     };
 
+    /**
+     * 投稿済みの書籍を編集する
+     * @param book 編集する書籍
+     */
+    const handleEdit = async (book: AmazingBook) => {
+        console.log('handleEdit book:', book);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="container mx-auto px-4 py-8">
@@ -270,12 +278,21 @@ export default function NewPage() {
                                         </h2>
                                         <p className="text-gray-600 mb-2 line-clamp-1">{result.authors}</p>
                                         <p className="text-gray-500 text-sm mb-4 line-clamp-3">{result.description}</p>
-                                        <button
-                                            onClick={() => handleRegister(result)}
-                                            className="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white py-2 rounded-md transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
-                                        >
-                                            登録
-                                        </button>
+                                        {result.isPosted ? (
+                                            <button
+                                                onClick={() => handleEdit(result)}
+                                                className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white py-2 rounded-md transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
+                                            >
+                                                編集
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleRegister(result)}
+                                                className="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white py-2 rounded-md transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
+                                            >
+                                                登録
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
