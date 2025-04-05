@@ -91,73 +91,72 @@ export default function NewPage() {
             const data: GoogleBooksResponse = await response.json();
             console.log('Search results:', data);
 
-            // 追加の結果がない場合は終了
-            if (!data.items || data.items.length === 0) {
-                return;
-            }
+            if (data.items && data.items.length > 0) {
+                if (data.items.length === MAX_BY_REQUEST) {
+                    // 結果がMAX_BY_REQUEST件なら、次の検索でさらに検索結果が取得できる可能性ありなので、
+                    // 次の検索インデックスを更新する
+                    nextIndex += data.items.length;
+                }
 
-            if (data.items.length === MAX_BY_REQUEST) {
-                // 結果がMAX_BY_REQUEST件なら、次の検索でさらに検索結果が取得できる可能性ありなので、
-                // 次の検索インデックスを更新する
-                nextIndex += data.items.length;
-            }
+                if (startIndex > 0) {
+                    // 既存の検索結果と重複する書籍を除外する
+                    const existingIds = new Set(searchResults.map((book) => book.id));
+                    data.items = data.items.filter((item) => !existingIds.has(item.id));
+                }
 
-            if (startIndex > 0) {
-                // 既存の検索結果と重複する書籍を除外する
-                const existingIds = new Set(searchResults.map((book) => book.id));
-                data.items = data.items.filter((item) => !existingIds.has(item.id));
+                // AmazingBookに変換する
+                amazingBooks = data.items.map((googleBook) => {
+                    return {
+                        id: googleBook.id,
+                        title: googleBook.volumeInfo?.title,
+                        description: googleBook.volumeInfo?.description,
+                        authors: googleBook.volumeInfo?.authors?.join(','),
+                        thumbnail: googleBook.volumeInfo?.imageLinks?.thumbnail,
+                        isPosted: false,
+                    };
+                });
             }
-
-            // AmazingBookに変換する
-            amazingBooks = data.items.map((googleBook) => {
-                return {
-                    id: googleBook.id,
-                    title: googleBook.volumeInfo?.title,
-                    description: googleBook.volumeInfo?.description,
-                    authors: googleBook.volumeInfo?.authors?.join(','),
-                    thumbnail: googleBook.volumeInfo?.imageLinks?.thumbnail,
-                    isPosted: false,
-                };
-            });
         } catch (error) {
             console.error('Error:', error);
             alert('検索に失敗しました');
             return;
         }
 
-        try {
-            // 検索結果の書籍IDを使ってBookPostを取得
-            const response = await fetch('/api/posts/bulk', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: '0001',
-                    googleIds: amazingBooks.map((book) => book.id),
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`投稿の取得に失敗しました: ${response.status}`);
-            }
-
-            const bookPosts: BookPost[] = await response.json();
-            if (bookPosts && bookPosts.length > 0) {
-                // BookPost が存在する書籍をマーキング
-                console.log('BookPosts:', bookPosts);
-                amazingBooks.forEach((book) => {
-                    const postedBook = bookPosts.find((post) => post.book.googleId === book.id);
-                    if (postedBook) {
-                        book.isPosted = true; // 書籍が投稿されていることをマーキング
-                    }
+        if (amazingBooks.length > 0) {
+            try {
+                // 検索結果の書籍IDを使ってBookPostを取得
+                const response = await fetch('/api/posts/bulk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: '0001',
+                        googleIds: amazingBooks.map((book) => book.id),
+                    }),
                 });
-                console.log('amazingBooks:', amazingBooks);
+
+                if (!response.ok) {
+                    throw new Error(`投稿の取得に失敗しました: ${response.status}`);
+                }
+
+                const bookPosts: BookPost[] = await response.json();
+                if (bookPosts && bookPosts.length > 0) {
+                    // BookPost が存在する書籍をマーキング
+                    console.log('BookPosts:', bookPosts);
+                    amazingBooks.forEach((book) => {
+                        const postedBook = bookPosts.find((post) => post.book.googleId === book.id);
+                        if (postedBook) {
+                            book.isPosted = true; // 書籍が投稿されていることをマーキング
+                        }
+                    });
+                    console.log('amazingBooks:', amazingBooks);
+                }
+            } catch (error) {
+                console.error('Failed to fetch bookPosts:', error);
+                alert('投稿の取得に失敗しました');
+                return;
             }
-        } catch (error) {
-            console.error('Failed to fetch bookPosts:', error);
-            alert('投稿の取得に失敗しました');
-            return;
         }
 
         if (startIndex === 0) {
