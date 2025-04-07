@@ -250,6 +250,8 @@ export default function NewPage() {
      */
     const handleEdit = async (book: AmazingBook) => {
         console.log('handleEdit book:', book);
+        // 編集画面に遷移する
+        window.location.href = `/posts/edit/${book.id}`;
     };
 
     return (

@@ -69,7 +69,7 @@ export default function EditPage({ params }: EditPageProps) {
             });
 
             if (!response.ok) throw new Error('更新に失敗しました', { cause: response });
-            //router.push('/posts');
+            alert('更新しました');
         } catch (error) {
             console.error('Error:', error);
             alert('更新に失敗しました');
@@ -124,7 +124,7 @@ export default function EditPage({ params }: EditPageProps) {
                                     onClick={() => setStatus(option.value)}
                                     className={`px-4 py-2 rounded-md ${
                                         status === option.value ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
-                                    } transition-colors`}
+                                    } transition-colors cursor-pointer`}
                                 >
                                     {option.label}
                                 </button>
@@ -141,7 +141,7 @@ export default function EditPage({ params }: EditPageProps) {
                                     onClick={() => setRank(value)}
                                     className={`w-10 h-10 rounded-full ${
                                         rank >= value ? 'bg-yellow-400' : 'bg-gray-200'
-                                    } transition-colors`}
+                                    } transition-colors cursor-pointer`}
                                 >
                                     {value}
                                 </button>
@@ -162,14 +162,14 @@ export default function EditPage({ params }: EditPageProps) {
                     <div className="flex gap-4">
                         <button
                             type="submit"
-                            className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+                            className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
                         >
                             更新する
                         </button>
                         <button
                             type="button"
                             onClick={() => router.back()}
-                            className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
+                            className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors cursor-pointer"
                         >
                             キャンセル
                         </button>
