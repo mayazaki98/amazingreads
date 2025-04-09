@@ -1,24 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { Book, BookPost as PrismaBookPost } from '@prisma/client';
-
-/** 書籍の情報 */
-interface AmazingBook {
-    /** 書籍のID */
-    id: string;
-    /** 書籍のタイトル */
-    title: string;
-    /** 書籍の説明 */
-    description: string;
-    /** 著者のリスト */
-    authors: string;
-    /** サムネイルのURL */
-    thumbnail: string;
-    /** 書籍が投稿されているかどうか */
-    isPosted: boolean;
-}
+import SearchResultItem from '@/components/SearchResultItem';
+import { BookWithPosted } from '@/utils/amazingTypes';
 
 /** Google Books APIのレスポンス */
 interface GoogleBooksResponse {
@@ -64,7 +49,7 @@ export default function NewPage() {
     const MAX_BY_REQUEST = 40; // 1リクエスト当たりの取得数
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<AmazingBook[]>([]); // 検索結果
+    const [searchResults, setSearchResults] = useState<BookWithPosted[]>([]); // 検索結果
     const [nextSearchIndex, setNextSearchIndex] = useState(0); // 次の検索インデックス
     const [isLoading, setIsLoading] = useState(false); // ローディング状態
 
@@ -76,7 +61,7 @@ export default function NewPage() {
         setIsLoading(true);
         console.log('handleNextSearch searchQuery:', searchQuery, 'startIndex:', startIndex);
         let nextIndex = startIndex;
-        let amazingBooks: AmazingBook[] = [];
+        let amazingBooks: BookWithPosted[] = [];
 
         try {
             // Google Books APIから検索結果を取得する
@@ -100,18 +85,21 @@ export default function NewPage() {
 
                 if (startIndex > 0) {
                     // 既存の検索結果と重複する書籍を除外する
-                    const existingIds = new Set(searchResults.map((book) => book.id));
+                    const existingIds = new Set(searchResults.map((book) => book.googleId));
                     data.items = data.items.filter((item) => !existingIds.has(item.id));
                 }
 
                 // AmazingBookに変換する
                 amazingBooks = data.items.map((googleBook) => {
                     return {
-                        id: googleBook.id,
+                        id: '', // PrismaのIDは空にしておく
+                        googleId: googleBook.id,
                         title: googleBook.volumeInfo?.title,
                         description: googleBook.volumeInfo?.description,
                         authors: googleBook.volumeInfo?.authors?.join(','),
                         thumbnail: googleBook.volumeInfo?.imageLinks?.thumbnail,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
                         isPosted: false,
                     };
                 });
@@ -132,7 +120,7 @@ export default function NewPage() {
                     },
                     body: JSON.stringify({
                         userId: '0001',
-                        googleIds: amazingBooks.map((book) => book.id),
+                        googleIds: amazingBooks.map((book) => book.googleId),
                     }),
                 });
 
@@ -145,7 +133,7 @@ export default function NewPage() {
                     // BookPost が存在する書籍をマーキング
                     console.log('BookPosts:', bookPosts);
                     amazingBooks.forEach((book) => {
-                        const postedBook = bookPosts.find((post) => post.book.googleId === book.id);
+                        const postedBook = bookPosts.find((post) => post.book.googleId === book.googleId);
                         if (postedBook) {
                             book.isPosted = true; // 書籍が投稿されていることをマーキング
                         }
@@ -181,8 +169,8 @@ export default function NewPage() {
      * 書籍を登録する
      * @param book 登録する書籍
      */
-    const handleRegister = async (book: AmazingBook) => {
-        console.log('handleRegister book:', book);
+    const handleRegister = async ({ googleId, title, description, authors, thumbnail }: Book) => {
+        console.log('handleRegister book:', { googleId, title, description, authors, thumbnail });
 
         // 書籍の登録処理を実行する
         let registerdBook: Book;
@@ -192,13 +180,7 @@ export default function NewPage() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    googleId: book.id,
-                    title: book.title,
-                    description: book.description,
-                    authors: book.authors,
-                    thumbnail: book.thumbnail,
-                }),
+                body: JSON.stringify({ googleId, title, description, authors, thumbnail }),
             });
 
             if (!response.ok) {
@@ -240,18 +222,10 @@ export default function NewPage() {
         }
 
         // 登録した書籍のisPostedをtrueに設定し、検索結果を更新
-        const updatedResults = searchResults.map((item) => (item.id === book.id ? { ...item, isPosted: true } : item));
+        const updatedResults = searchResults.map((item) =>
+            item.googleId === googleId ? { ...item, isPosted: true } : item
+        );
         setSearchResults(updatedResults);
-    };
-
-    /**
-     * 投稿済みの書籍を編集する
-     * @param book 編集する書籍
-     */
-    const handleEdit = async (book: AmazingBook) => {
-        console.log('handleEdit book:', book);
-        // 編集画面に遷移する
-        window.location.href = `/posts/edit/${book.id}`;
     };
 
     return (
@@ -283,48 +257,7 @@ export default function NewPage() {
                 {/* 検索結果を表示する */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {searchResults.map((result) => (
-                        <div
-                            key={result.id}
-                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
-                        >
-                            <div className="p-4">
-                                <div className="flex gap-4">
-                                    {result.thumbnail && (
-                                        <div className="relative w-24 h-32 flex-shrink-0">
-                                            <Image
-                                                src={result.thumbnail}
-                                                alt={result.title}
-                                                fill
-                                                sizes="(max-width: 768px) 96px, 96px"
-                                                className="object-cover rounded-md"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="flex-1">
-                                        <h2 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
-                                            {result.title}
-                                        </h2>
-                                        <p className="text-gray-600 mb-2 line-clamp-1">{result.authors}</p>
-                                        <p className="text-gray-500 text-sm mb-4 line-clamp-3">{result.description}</p>
-                                        {result.isPosted ? (
-                                            <button
-                                                onClick={() => handleEdit(result)}
-                                                className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white py-2 rounded-md transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
-                                            >
-                                                編集
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleRegister(result)}
-                                                className="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white py-2 rounded-md transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
-                                            >
-                                                登録
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <SearchResultItem key={result.googleId} book={result} handleRegister={handleRegister} />
                     ))}
                 </div>
                 {/* さらに検索ボタン */}
