@@ -39,6 +39,24 @@ export default function PostsPage() {
         fetchPosts();
     }, []);
 
+    const handleDelete = async (post: BookPost) => {
+        if (confirm('本当に削除しますか？')) {
+            try {
+                const response = await fetch(`/api/posts/0001/${post.book.googleId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete post');
+                }
+
+                setBookPosts((prevPosts) => prevPosts.filter((p) => p.id !== post.id));
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    };
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -52,8 +70,7 @@ export default function PostsPage() {
                     {bookPosts.map((post) => (
                         <div
                             key={post.id}
-                            onClick={() => (window.location.href = `/posts/edit/${post.book.googleId}`)}
-                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
                         >
                             <div className="p-4">
                                 <div className="flex gap-4">
@@ -93,6 +110,26 @@ export default function PostsPage() {
                                             )}
                                         </div>
                                         <p className="text-gray-500 text-sm mb-4 line-clamp-3">{post.comment}</p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.location.href = `/posts/edit/${post.book.googleId}`;
+                                                }}
+                                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition cursor-pointer"
+                                            >
+                                                編集
+                                            </button>
+                                            <button
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(post);
+                                                }}
+                                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition cursor-pointer"
+                                            >
+                                                削除
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
