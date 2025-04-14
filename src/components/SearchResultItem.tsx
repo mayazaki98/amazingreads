@@ -9,10 +9,7 @@ type Props = {
 
 const SearchResultItem = ({ book, handleRegister }: Props) => {
     return (
-        <div
-            key={book.googleId}
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
-        >
+        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
             <div className="p-4">
                 <div className="flex gap-4">
                     {book.thumbnail && (
