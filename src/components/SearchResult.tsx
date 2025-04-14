@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Book, BookPost as PrismaBookPost } from '@prisma/client';
+import { Book } from '@prisma/client';
 import SearchResultItem from '@/components/SearchResultItem';
-import { BookWithPosted } from '@/utils/amazingTypes';
+import { BookPostWithBook, BookWithPosted } from '@/utils/amazingTypes';
 
 /** Google Books APIのレスポンス */
 interface GoogleBooksResponse {
@@ -38,12 +38,6 @@ interface GoogleIdentifier {
     /** 識別子の値 */
     identifier: string;
 }
-
-type BookPost = PrismaBookPost & {
-    book: {
-        googleId: string;
-    };
-};
 
 type Props = {
     query: string;
@@ -132,7 +126,7 @@ const SearchResult = ({ query }: Props) => {
                     throw new Error(`投稿の取得に失敗しました: ${response.status}`);
                 }
 
-                const bookPosts: BookPost[] = await response.json();
+                const bookPosts: BookPostWithBook[] = await response.json();
                 if (bookPosts && bookPosts.length > 0) {
                     // BookPost が存在する書籍をマーキング
                     console.log('BookPosts:', bookPosts);
@@ -200,7 +194,7 @@ const SearchResult = ({ query }: Props) => {
         }
 
         // 書籍投稿の登録処理を実行する
-        let registerdPost: BookPost;
+        let registerdPost: BookPostWithBook;
         try {
             const response = await fetch('/api/posts/', {
                 method: 'POST',
