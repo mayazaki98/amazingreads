@@ -1,5 +1,5 @@
-import SearchResult from '@/components/SearchResult';
+import SearchResults from '@/components/SearchResults';
 
 export default function NewPage() {
-    return <SearchResult query="" />;
+    return <SearchResults query="" />;
 }
