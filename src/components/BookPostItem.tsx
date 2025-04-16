@@ -5,9 +5,10 @@ import Image from 'next/image';
 type Props = {
     post: BookPostWithBook;
     handleDelete: (post: BookPostWithBook) => Promise<void>;
+    handleEdit: (post: BookPostWithBook) => void;
 };
 
-const BookPostItem = ({ post, handleDelete }: Props) => {
+const BookPostItem = ({ post, handleDelete, handleEdit }: Props) => {
     const statusOptions = [
         { value: ReadStatus.PLAN_TO_READ, label: '読みたい' },
         { value: ReadStatus.READING, label: '読書中' },
@@ -52,7 +53,7 @@ const BookPostItem = ({ post, handleDelete }: Props) => {
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    window.location.href = `/posts/edit/${post.book.googleId}`;
+                                    handleEdit(post);
                                 }}
                                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition cursor-pointer"
                             >
