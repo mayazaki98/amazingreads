@@ -43,7 +43,7 @@ type Props = {
     query: string;
 };
 
-const SearchResult = ({ query }: Props) => {
+const SearchResults = ({ query }: Props) => {
     const MAX_BY_REQUEST = 40; // 1リクエスト当たりの取得数
 
     const [searchQuery, setSearchQuery] = useState(query); // 検索クエリ
@@ -281,4 +281,4 @@ const SearchResult = ({ query }: Props) => {
     );
 };
 
-export default SearchResult;
+export default SearchResults;
