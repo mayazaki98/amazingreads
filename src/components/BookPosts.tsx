@@ -68,8 +68,12 @@ const BookPosts = ({ userId }: Props) => {
         setEditingPost(post);
     };
 
-    const closeEditModal = () => {
+    const handleExitEditModal = (isUpdate: boolean, post: BookPostWithBook | null) => {
         setEditingPost(null);
+
+        if (isUpdate && post) {
+            setBookPosts((prevPosts) => prevPosts.map((p) => (p.id === post.id ? post : p)));
+        }
     };
 
     if (loading) {
@@ -81,15 +85,7 @@ const BookPosts = ({ userId }: Props) => {
             {/* 編集モーダル */}
             {editingPost && (
                 <div className="fixed inset-0 bg-black/75 flex items-start justify-center z-50 overflow-y-auto">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative mt-10">
-                        <button
-                            onClick={closeEditModal}
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-                        >
-                            ✕
-                        </button>
-                        <BookPostEdit post={editingPost} />
-                    </div>
+                    <BookPostEdit post={editingPost} handleExit={handleExitEditModal} />
                 </div>
             )}
             <div className="container mx-auto px-4 py-8">

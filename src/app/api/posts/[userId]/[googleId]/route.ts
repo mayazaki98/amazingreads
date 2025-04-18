@@ -48,6 +48,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ userId: 
                 id: bookPost.id,
             },
             data,
+            include: {
+                book: true,
+            },
         });
         return Response.json(updatedBookPost);
     } catch (error) {
@@ -76,6 +79,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ userI
         const deletedBookPost = await prisma.bookPost.delete({
             where: {
                 id: bookPost.id,
+            },
+            include: {
+                book: true,
             },
         });
         return Response.json(deletedBookPost);

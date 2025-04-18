@@ -1,17 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ReadStatus } from '@prisma/client';
 import { BookPostWithBook } from '@/utils/amazingTypes';
 
 type Props = {
     post: BookPostWithBook;
+    handleExit: (isUpdate: boolean, post: BookPostWithBook | null) => void;
 };
 
-const BookPostEdit = ({ post }: Props) => {
-    const router = useRouter();
+const BookPostEdit = ({ post, handleExit }: Props) => {
     const [bookPost] = useState<BookPostWithBook>(post);
     const [status, setStatus] = useState<string>(post.status || ReadStatus.PLAN_TO_READ);
     const [rank, setRank] = useState<number>(post.rank || 0);
@@ -40,12 +39,17 @@ const BookPostEdit = ({ post }: Props) => {
                 }),
             });
 
-            if (!response.ok) throw new Error('更新に失敗しました', { cause: response });
-            alert('更新しました');
+            if (!response.ok) {
+                throw new Error('更新に失敗しました', { cause: response });
+            }
+
+            handleExit(true, await response.json());
         } catch (error) {
             console.error('Error:', error);
             alert('更新に失敗しました');
         }
+
+        handleExit(false, null);
     };
 
     return (
@@ -127,7 +131,7 @@ const BookPostEdit = ({ post }: Props) => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => router.back()}
+                            onClick={() => handleExit(false, null)}
                             className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors cursor-pointer"
                         >
                             キャンセル
