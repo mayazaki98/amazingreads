@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { ReadStatus } from '@prisma/client';
 import { BookPostWithBook } from '@/utils/amazingTypes';
+import { CancelButton, PutButton } from './parts/Button';
 
 type Props = {
     post: BookPostWithBook;
@@ -22,8 +23,7 @@ const BookPostEdit = ({ post, handleExit }: Props) => {
         { value: ReadStatus.COMPLETED, label: '読み終わった' },
     ];
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleUpdate = async () => {
         if (!bookPost) return;
 
         try {
@@ -76,22 +76,25 @@ const BookPostEdit = ({ post, handleExit }: Props) => {
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">読書状態</label>
                         <div className="flex gap-4">
-                            {statusOptions.map((option) => (
-                                <button
-                                    key={option.value}
-                                    type="button"
-                                    onClick={() => setStatus(option.value)}
-                                    className={`px-4 py-2 rounded-md ${
-                                        status === option.value ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
-                                    } transition-colors cursor-pointer`}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
+                            {statusOptions.map((option) =>
+                                status === option.value ? (
+                                    <PutButton
+                                        key={option.value}
+                                        label={option.label}
+                                        onClick={() => setStatus(option.value)}
+                                    />
+                                ) : (
+                                    <CancelButton
+                                        key={option.value}
+                                        label={option.label}
+                                        onClick={() => setStatus(option.value)}
+                                    />
+                                )
+                            )}
                         </div>
                     </div>
                     <div>
@@ -123,21 +126,10 @@ const BookPostEdit = ({ post, handleExit }: Props) => {
                     </div>
 
                     <div className="flex gap-4">
-                        <button
-                            type="submit"
-                            className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
-                        >
-                            更新する
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => handleExit(false, null)}
-                            className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors cursor-pointer"
-                        >
-                            キャンセル
-                        </button>
+                        <PutButton label="更新" onClick={() => handleUpdate()} />
+                        <CancelButton label="キャンセル" onClick={() => handleExit(false, null)} />
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

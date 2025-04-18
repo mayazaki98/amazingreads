@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Book } from '@prisma/client';
 import SearchResultItem from '@/components/SearchResultItem';
 import { BookPostWithBook, BookWithPosted } from '@/utils/amazingTypes';
+import { PutButton } from './parts/Button';
 
 /** Google Books APIのレスポンス */
 interface GoogleBooksResponse {
@@ -244,12 +245,7 @@ const SearchResults = ({ query }: Props) => {
                             className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="書籍名を入力してください"
                         />
-                        <button
-                            onClick={() => handleNextSearch(0)}
-                            className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
-                        >
-                            検索
-                        </button>
+                        <PutButton label="検索" onClick={() => handleNextSearch(0)} />
                     </div>
                 </div>
                 {/* 検索結果を表示する */}
@@ -261,12 +257,7 @@ const SearchResults = ({ query }: Props) => {
                 {/* さらに検索ボタン */}
                 {nextSearchIndex > 0 && !isLoading && (
                     <div className="mt-8 text-center">
-                        <button
-                            onClick={() => handleNextSearch(nextSearchIndex)}
-                            className="bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white px-8 py-3 rounded-lg transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
-                        >
-                            さらに検索
-                        </button>
+                        <PutButton label="さらに検索" onClick={() => handleNextSearch(nextSearchIndex)} />
                     </div>
                 )}
                 {/* ローディング表示 */}

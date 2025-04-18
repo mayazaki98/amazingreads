@@ -1,10 +1,11 @@
 import { BookPostWithBook } from '@/utils/amazingTypes';
 import { ReadStatus } from '@prisma/client';
 import Image from 'next/image';
+import { DeleteButton, PutButton } from './parts/Button';
 
 type Props = {
     post: BookPostWithBook;
-    handleDelete: (post: BookPostWithBook) => Promise<void>;
+    handleDelete: (post: BookPostWithBook) => void;
     handleEdit: (post: BookPostWithBook) => void;
 };
 
@@ -50,24 +51,8 @@ const BookPostItem = ({ post, handleDelete, handleEdit }: Props) => {
                         </div>
                         <p className="text-gray-500 text-sm mb-4 line-clamp-3">{post.comment}</p>
                         <div className="flex gap-2">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEdit(post);
-                                }}
-                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition cursor-pointer"
-                            >
-                                編集
-                            </button>
-                            <button
-                                onClick={async (e) => {
-                                    e.stopPropagation();
-                                    handleDelete(post);
-                                }}
-                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition cursor-pointer"
-                            >
-                                削除
-                            </button>
+                            <PutButton label="編集" onClick={() => handleEdit(post)} />
+                            <DeleteButton label="削除" onClick={() => handleDelete(post)} />
                         </div>
                     </div>
                 </div>

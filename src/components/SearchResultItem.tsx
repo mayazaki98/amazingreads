@@ -1,6 +1,7 @@
 import { BookWithPosted } from '@/utils/amazingTypes';
 import { Book } from '@prisma/client';
 import Image from 'next/image';
+import { PostButton } from './parts/Button';
 
 type Props = {
     book: BookWithPosted;
@@ -27,14 +28,7 @@ const SearchResultItem = ({ book, handleRegister }: Props) => {
                         <h2 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{book.title}</h2>
                         <p className="text-gray-600 mb-2 line-clamp-1">{book.authors}</p>
                         <p className="text-gray-500 text-sm mb-4 line-clamp-3">{book.description}</p>
-                        {!book.isPosted && (
-                            <button
-                                onClick={() => handleRegister(book)}
-                                className="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white py-2 rounded-md transition-colors duration-200 cursor-pointer hover:shadow-md active:shadow-sm"
-                            >
-                                登録
-                            </button>
-                        )}
+                        {!book.isPosted && <PostButton onClick={() => handleRegister(book)} label="登録" />}
                     </div>
                 </div>
             </div>
