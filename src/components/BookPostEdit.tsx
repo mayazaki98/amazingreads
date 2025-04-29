@@ -44,6 +44,7 @@ const BookPostEdit = ({ post, handleExit }: Props) => {
             }
 
             handleExit(true, await response.json());
+            return;
         } catch (error) {
             console.error('Error:', error);
             alert('更新に失敗しました');
