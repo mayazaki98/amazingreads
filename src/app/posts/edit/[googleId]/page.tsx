@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { BookPostWithBook } from '@/utils/amazingTypes';
 import BookPostEdit from '@/components/BookPostEdit';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 interface EditPageProps {
     params: Promise<{
@@ -13,6 +14,7 @@ interface EditPageProps {
 
 export default function EditPage({ params }: EditPageProps) {
     const router = useRouter();
+    const { getToken, userId } = useAuth(); // 認証情報
     const { googleId } = use(params);
     const [bookPost, setBookPost] = useState<BookPostWithBook | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +23,12 @@ export default function EditPage({ params }: EditPageProps) {
         const fetchBookAndPost = async () => {
             try {
                 // 投稿情報を取得
-                const postResponse = await fetch(`/api/posts/0001/${googleId}`);
+                const token = await getToken();
+                const postResponse = await fetch(`/api/posts/${userId}/${googleId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 if (!postResponse.ok) throw new Error('投稿の取得に失敗しました', { cause: postResponse });
                 const postData = await postResponse.json();
                 setBookPost(postData);

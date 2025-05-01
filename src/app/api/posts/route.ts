@@ -1,7 +1,13 @@
+import { auth } from '@/utils/auth';
 import { prisma } from '@/utils/prisma';
 
 // POST: 新しいBookPostを作成
 export async function POST(req: Request) {
+    const { errorResponse } = await auth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const data = await req.json();
 
     try {

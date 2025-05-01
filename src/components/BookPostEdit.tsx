@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ReadStatus } from '@prisma/client';
 import { BookPostWithBook } from '@/utils/amazingTypes';
 import { CancelButton, PutButton } from './parts/Button';
+import { useAuth } from '@clerk/nextjs';
 
 type Props = {
     post: BookPostWithBook;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 const BookPostEdit = ({ post, handleExit }: Props) => {
+    const { getToken } = useAuth(); // 認証情報
     const [bookPost] = useState<BookPostWithBook>(post);
     const [status, setStatus] = useState<string>(post.status || ReadStatus.PLAN_TO_READ);
     const [rank, setRank] = useState<number>(post.rank || 0);
@@ -27,10 +29,12 @@ const BookPostEdit = ({ post, handleExit }: Props) => {
         if (!bookPost) return;
 
         try {
+            const token = await getToken();
             const response = await fetch(`/api/posts/${bookPost.userId}/${bookPost.book.googleId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     status,

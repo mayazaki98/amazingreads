@@ -5,6 +5,7 @@ import { Book } from '@prisma/client';
 import SearchResultItem from '@/components/SearchResultItem';
 import { BookPostWithBook, BookWithPosted } from '@/utils/amazingTypes';
 import { PutButton } from './parts/Button';
+import { useAuth } from '@clerk/nextjs';
 
 /** Google Books APIのレスポンス */
 interface GoogleBooksResponse {
@@ -47,6 +48,7 @@ type Props = {
 const SearchResults = ({ query }: Props) => {
     const MAX_BY_REQUEST = 40; // 1リクエスト当たりの取得数
 
+    const { getToken, userId } = useAuth(); // 認証情報
     const [searchQuery, setSearchQuery] = useState(query); // 検索クエリ
     const [searchResults, setSearchResults] = useState<BookWithPosted[]>([]); // 検索結果
     const [nextSearchIndex, setNextSearchIndex] = useState(0); // 次の検索インデックス
@@ -112,37 +114,40 @@ const SearchResults = ({ query }: Props) => {
         if (amazingBooks.length > 0) {
             try {
                 // 検索結果の書籍IDを使ってBookPostを取得
-                const response = await fetch('/api/posts/bulk', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        userId: '0001',
-                        googleIds: amazingBooks.map((book) => book.googleId),
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`投稿の取得に失敗しました: ${response.status}`);
-                }
-
-                const bookPosts: BookPostWithBook[] = await response.json();
-                if (bookPosts && bookPosts.length > 0) {
-                    // BookPost が存在する書籍をマーキング
-                    console.log('BookPosts:', bookPosts);
-                    amazingBooks.forEach((book) => {
-                        const postedBook = bookPosts.find((post) => post.book.googleId === book.googleId);
-                        if (postedBook) {
-                            book.isPosted = true; // 書籍が投稿されていることをマーキング
-                        }
+                const token = await getToken();
+                if (token) {
+                    const response = await fetch('/api/posts/bulk', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                            userId: userId,
+                            googleIds: amazingBooks.map((book) => book.googleId),
+                        }),
                     });
-                    console.log('amazingBooks:', amazingBooks);
+
+                    if (!response.ok) {
+                        throw new Error(`投稿の取得に失敗しました: ${response.status}`);
+                    }
+
+                    const bookPosts: BookPostWithBook[] = await response.json();
+                    if (bookPosts && bookPosts.length > 0) {
+                        // BookPost が存在する書籍をマーキング
+                        console.log('BookPosts:', bookPosts);
+                        amazingBooks.forEach((book) => {
+                            const postedBook = bookPosts.find((post) => post.book.googleId === book.googleId);
+                            if (postedBook) {
+                                book.isPosted = true; // 書籍が投稿されていることをマーキング
+                            }
+                        });
+                        console.log('amazingBooks:', amazingBooks);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch bookPosts:', error);
                 alert('投稿の取得に失敗しました');
-                return;
             }
         }
 
@@ -197,13 +202,15 @@ const SearchResults = ({ query }: Props) => {
         // 書籍投稿の登録処理を実行する
         let registerdPost: BookPostWithBook;
         try {
+            const token = await getToken();
             const response = await fetch('/api/posts/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    userId: '0001',
+                    userId: userId,
                     bookId: registerdBook.id,
                 }),
             });

@@ -1,7 +1,13 @@
+import { auth } from '@/utils/auth';
 import { prisma } from '@/utils/prisma';
 
 // GET: 特定のBookPostを取得
 export async function GET(req: Request, { params }: { params: Promise<{ userId: string; googleId: string }> }) {
+    const { errorResponse } = await auth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const { userId, googleId } = await params;
 
     const bookPost = await prisma.bookPost.findFirst({
@@ -25,6 +31,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ userId: 
 
 // PUT: 特定のBookPostを更新
 export async function PUT(req: Request, { params }: { params: Promise<{ userId: string; googleId: string }> }) {
+    const { errorResponse } = await auth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const { userId, googleId } = await params;
 
     const data = await req.json();
@@ -60,6 +71,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ userId: 
 
 // DELETE: 特定のBookPostを削除
 export async function DELETE(req: Request, { params }: { params: Promise<{ userId: string; googleId: string }> }) {
+    const { errorResponse } = await auth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const { userId, googleId } = await params;
 
     try {

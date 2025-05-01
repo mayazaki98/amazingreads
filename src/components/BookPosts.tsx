@@ -4,12 +4,10 @@ import { useEffect, useState } from 'react';
 import { BookPostWithBook } from '@/utils/amazingTypes';
 import BookPostItem from '@/components/BookPostItem';
 import BookPostEdit from '@/components/BookPostEdit';
+import { useAuth } from '@clerk/nextjs';
 
-type Props = {
-    userId: string;
-};
-
-const BookPosts = ({ userId }: Props) => {
+const BookPosts = () => {
+    const { getToken, userId } = useAuth(); // 認証情報
     const [bookPosts, setBookPosts] = useState<BookPostWithBook[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingPost, setEditingPost] = useState<BookPostWithBook | null>(null);
@@ -17,7 +15,12 @@ const BookPosts = ({ userId }: Props) => {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                const response = await fetch(`/api/posts/${userId}`);
+                const token = await getToken();
+                const response = await fetch(`/api/posts/${userId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch get posts', { cause: response });
@@ -49,8 +52,12 @@ const BookPosts = ({ userId }: Props) => {
     const handleDelete = async (post: BookPostWithBook) => {
         if (confirm('本当に削除しますか？')) {
             try {
+                const token = await getToken();
                 const response = await fetch(`/api/posts/${userId}/${post.book.googleId}`, {
                     method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 });
 
                 if (!response.ok) {
