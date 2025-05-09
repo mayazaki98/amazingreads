@@ -1,7 +1,13 @@
+import { apiAuth } from '@/utils/apiAuth';
 import { prisma } from '@/utils/prisma';
 
 // POST: 新しいBookを作成
 export async function POST(req: Request) {
+    const { errorResponse } = await apiAuth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const data = await req.json();
     const { googleId } = data;
     try {

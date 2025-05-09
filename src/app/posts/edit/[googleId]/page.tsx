@@ -40,7 +40,7 @@ export default function EditPage({ params }: EditPageProps) {
         };
 
         fetchBookAndPost();
-    }, [googleId]);
+    }, [googleId, getToken, userId]);
 
     const handleExit = () => {
         router.back();

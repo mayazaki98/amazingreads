@@ -1,7 +1,13 @@
+import { apiAuth } from '@/utils/apiAuth';
 import { prisma } from '@/utils/prisma';
 
 // POST: 複数のgoogleIdに該当するBookを取得
 export async function POST(req: Request) {
+    const { errorResponse } = await apiAuth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const { googleIds } = await req.json();
 
     if (!Array.isArray(googleIds) || googleIds.length === 0) {

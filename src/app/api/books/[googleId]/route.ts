@@ -1,7 +1,13 @@
+import { apiAuth } from '@/utils/apiAuth';
 import { prisma } from '@/utils/prisma';
 
 // GET: 特定のBookを取得
 export async function GET(req: Request, { params }: { params: Promise<{ googleId: string }> }) {
+    const { errorResponse } = await apiAuth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const { googleId } = await params;
 
     const book = await prisma.book.findUnique({
@@ -17,6 +23,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ googleId
 
 // PUT: 特定のBookを更新
 export async function PUT(req: Request, { params }: { params: Promise<{ googleId: string }> }) {
+    const { errorResponse } = await apiAuth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const { googleId } = await params;
 
     const data = await req.json();
@@ -34,6 +45,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ googleId
 
 // DELETE: 特定のBookを削除
 export async function DELETE(req: Request, { params }: { params: Promise<{ googleId: string }> }) {
+    const { errorResponse } = await apiAuth(req);
+    if (errorResponse) {
+        return errorResponse;
+    }
+
     const { googleId } = await params;
 
     try {

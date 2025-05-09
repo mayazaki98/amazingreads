@@ -1,9 +1,9 @@
-import { auth } from '@/utils/auth';
+import { apiAuth } from '@/utils/apiAuth';
 import { prisma } from '@/utils/prisma';
 
 // GET: 特定のBookPostを取得
 export async function GET(req: Request, { params }: { params: Promise<{ userId: string; googleId: string }> }) {
-    const { errorResponse } = await auth(req);
+    const { errorResponse } = await apiAuth(req);
     if (errorResponse) {
         return errorResponse;
     }
@@ -31,7 +31,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ userId: 
 
 // PUT: 特定のBookPostを更新
 export async function PUT(req: Request, { params }: { params: Promise<{ userId: string; googleId: string }> }) {
-    const { errorResponse } = await auth(req);
+    const { errorResponse } = await apiAuth(req);
     if (errorResponse) {
         return errorResponse;
     }
@@ -71,7 +71,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ userId: 
 
 // DELETE: 特定のBookPostを削除
 export async function DELETE(req: Request, { params }: { params: Promise<{ userId: string; googleId: string }> }) {
-    const { errorResponse } = await auth(req);
+    const { errorResponse } = await apiAuth(req);
     if (errorResponse) {
         return errorResponse;
     }

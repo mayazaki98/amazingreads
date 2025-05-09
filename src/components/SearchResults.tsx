@@ -113,9 +113,9 @@ const SearchResults = ({ query }: Props) => {
 
         if (amazingBooks.length > 0) {
             try {
-                // 検索結果の書籍IDを使ってBookPostを取得
-                const token = await getToken();
-                if (token) {
+                // ユーザーがサインインしている場合、BookPostを取得する
+                if (userId) {
+                    const token = await getToken();
                     const response = await fetch('/api/posts/bulk', {
                         method: 'POST',
                         headers: {
@@ -176,6 +176,15 @@ const SearchResults = ({ query }: Props) => {
     const handleRegister = async ({ googleId, title, description, authors, thumbnail }: Book) => {
         console.log('handleRegister book:', { googleId, title, description, authors, thumbnail });
 
+        if (!userId) {
+            alert('サインインすることで書籍を登録できます。');
+            // サインインページにリダイレクトする
+            window.location.href = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL!;
+            return;
+        }
+
+        const token = await getToken();
+
         // 書籍の登録処理を実行する
         let registerdBook: Book;
         try {
@@ -183,6 +192,7 @@ const SearchResults = ({ query }: Props) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ googleId, title, description, authors, thumbnail }),
             });
@@ -202,7 +212,6 @@ const SearchResults = ({ query }: Props) => {
         // 書籍投稿の登録処理を実行する
         let registerdPost: BookPostWithBook;
         try {
-            const token = await getToken();
             const response = await fetch('/api/posts/', {
                 method: 'POST',
                 headers: {

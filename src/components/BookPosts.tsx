@@ -36,7 +36,7 @@ const BookPosts = () => {
         };
 
         fetchPosts();
-    }, [userId]);
+    }, [getToken, userId]);
 
     useEffect(() => {
         if (editingPost) {

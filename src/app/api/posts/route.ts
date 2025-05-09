@@ -1,9 +1,9 @@
-import { auth } from '@/utils/auth';
+import { apiAuth } from '@/utils/apiAuth';
 import { prisma } from '@/utils/prisma';
 
 // POST: 新しいBookPostを作成
 export async function POST(req: Request) {
-    const { errorResponse } = await auth(req);
+    const { errorResponse } = await apiAuth(req);
     if (errorResponse) {
         return errorResponse;
     }

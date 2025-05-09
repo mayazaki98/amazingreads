@@ -1,6 +1,6 @@
 import { verifyToken } from '@clerk/nextjs/server';
 
-export async function auth(req: Request): Promise<{ errorResponse: Response | null; userId: string | null }> {
+export async function apiAuth(req: Request): Promise<{ errorResponse: Response | null; userId: string | null }> {
     let errorResponse: Response | null = null;
     let userId: string | null = null;
 
