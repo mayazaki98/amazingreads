@@ -26,6 +26,13 @@ const nextConfig = {
                 port: '',
                 pathname: '/books/content/**',
             },
+            // Clerkのプロフィール画像用
+            {
+                protocol: 'https',
+                hostname: 'img.clerk.com',
+                port: '',
+                pathname: '/**',
+            },
         ],
     },
 };

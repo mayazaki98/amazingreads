@@ -3,15 +3,32 @@ import { prisma } from '@/utils/prisma';
 
 // GET: 特定のBookを取得
 export async function GET(req: Request, { params }: { params: Promise<{ googleId: string }> }) {
-    const { errorResponse } = await apiAuth(req);
-    if (errorResponse) {
-        return errorResponse;
-    }
-
     const { googleId } = await params;
 
     const book = await prisma.book.findUnique({
         where: { googleId },
+        include: {
+            // 投稿も含めて取得
+            bookPosts: {
+                // 投稿日時の降順
+                orderBy: {
+                    createdAt: 'desc',
+                },
+                include: {
+                    // 投稿したユーザー情報も取得
+                    user: true,
+                    // 投稿に対するリプライも取得
+                    replies: {
+                        // リプライ日時の降順
+                        orderBy: {
+                            createdAt: 'desc',
+                        },
+                        // リプライしたユーザー情報も取得
+                        include: { user: true },
+                    },
+                },
+            },
+        },
     });
 
     if (!book) {

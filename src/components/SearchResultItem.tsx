@@ -25,7 +25,9 @@ const SearchResultItem = ({ book, handleRegister }: Props) => {
                         </div>
                     )}
                     <div className="flex-1">
-                        <h2 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{book.title}</h2>
+                        <a href={`book/show/${book.googleId}`} className="hover:underline">
+                            <h2 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{book.title}</h2>
+                        </a>
                         <p className="text-gray-600 mb-2 line-clamp-1">{book.authors}</p>
                         <p className="text-gray-500 text-sm mb-4 line-clamp-3">{book.description}</p>
                         {!book.isPosted && <PostButton onClick={() => handleRegister(book)} label="登録" />}
