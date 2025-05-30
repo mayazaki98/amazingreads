@@ -17,7 +17,7 @@ export async function apiAuth(req: Request): Promise<{ errorResponse: Response |
         // トークンを検証
         const payload = await verifyToken(token, {
             jwtKey: process.env.CLERK_JWT_KEY,
-            authorizedParties: ['http://localhost:3000', 'amazingreads.vercel.app'],
+            authorizedParties: ['http://localhost:3000', 'https://amazingreads.vercel.app'],
         });
         console.log('Token payload:', payload);
 
