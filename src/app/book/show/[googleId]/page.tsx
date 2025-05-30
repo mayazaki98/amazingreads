@@ -2,11 +2,11 @@ import { prisma } from '@/utils/prisma';
 import BookShow from '@/components/BookShow';
 
 type BookShowPageProps = {
-    params: { googleId: string };
+    params: Promise<{ googleId: string }>;
 };
 
 export default async function BookShowPage({ params }: BookShowPageProps) {
-    const { googleId } = params;
+    const { googleId } = await params;
 
     // Bookデータをprismaから取得
     const book = await prisma.book.findUnique({
