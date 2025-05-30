@@ -2,6 +2,7 @@ import { BookWithPosted } from '@/utils/amazingTypes';
 import { Book } from '@prisma/client';
 import Image from 'next/image';
 import { PostButton } from './parts/Button';
+import { useAuth } from '@clerk/nextjs';
 
 type Props = {
     book: BookWithPosted;
@@ -9,6 +10,7 @@ type Props = {
 };
 
 const SearchResultItem = ({ book, handleRegister }: Props) => {
+    const { userId } = useAuth(); // 認証情報
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
             <div className="p-4">
@@ -25,12 +27,18 @@ const SearchResultItem = ({ book, handleRegister }: Props) => {
                         </div>
                     )}
                     <div className="flex-1">
-                        <a href={`book/show/${book.googleId}`} className="hover:underline">
+                        {book.existsSomethingPost ? (
+                            <a href={`book/show/${book.googleId}`} className="hover:underline">
+                                <h2 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{book.title}</h2>
+                            </a>
+                        ) : (
                             <h2 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{book.title}</h2>
-                        </a>
+                        )}
                         <p className="text-gray-600 mb-2 line-clamp-1">{book.authors}</p>
                         <p className="text-gray-500 text-sm mb-4 line-clamp-3">{book.description}</p>
-                        {!book.isPosted && <PostButton onClick={() => handleRegister(book)} label="登録" />}
+                        {!book.existsMyPost && userId && (
+                            <PostButton onClick={() => handleRegister(book)} label="登録" />
+                        )}
                     </div>
                 </div>
             </div>

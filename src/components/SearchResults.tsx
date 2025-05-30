@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Book } from '@prisma/client';
 import SearchResultItem from '@/components/SearchResultItem';
-import { BookPostWithBook, BookWithPosted } from '@/utils/amazingTypes';
+import { BookPostWithBook, BookWithPosted, PostedByBook } from '@/utils/amazingTypes';
 import { PutButton } from './parts/Button';
 import { useAuth } from '@clerk/nextjs';
 
@@ -101,7 +101,8 @@ const SearchResults = ({ query }: Props) => {
                         thumbnail: googleBook.volumeInfo?.imageLinks?.thumbnail,
                         createdAt: new Date(),
                         updatedAt: new Date(),
-                        isPosted: false,
+                        existsMyPost: false,
+                        existsSomethingPost: false,
                     };
                 });
             }
@@ -113,37 +114,36 @@ const SearchResults = ({ query }: Props) => {
 
         if (amazingBooks.length > 0) {
             try {
-                // ユーザーがサインインしている場合、BookPostを取得する
-                if (userId) {
-                    const token = await getToken();
-                    const response = await fetch('/api/posts/bulk', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({
-                            userId: userId,
-                            googleIds: amazingBooks.map((book) => book.googleId),
-                        }),
+                // 書籍ごとの投稿有無を取得する
+                const token = await getToken();
+                const response = await fetch('/api/books/posted', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        googleIds: amazingBooks.map((book) => book.googleId),
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`投稿有無の取得に失敗しました: ${response.status}`);
+                }
+
+                const postedByBooks: PostedByBook[] = await response.json();
+                if (postedByBooks && postedByBooks.length > 0) {
+                    // BookPost が存在する書籍をマーキング
+                    console.log('postedByBooks:', postedByBooks);
+                    amazingBooks.forEach((book) => {
+                        const posted = postedByBooks.find((posted) => posted.googleId === book.googleId);
+                        if (posted) {
+                            book.existsSomethingPost = posted.existsSomethingPost; // 投稿があるかどうか
+                            book.existsMyPost = posted.existsMyPost; // 自分の投稿があるかどうか
+                        }
                     });
-
-                    if (!response.ok) {
-                        throw new Error(`投稿の取得に失敗しました: ${response.status}`);
-                    }
-
-                    const bookPosts: BookPostWithBook[] = await response.json();
-                    if (bookPosts && bookPosts.length > 0) {
-                        // BookPost が存在する書籍をマーキング
-                        console.log('BookPosts:', bookPosts);
-                        amazingBooks.forEach((book) => {
-                            const postedBook = bookPosts.find((post) => post.book.googleId === book.googleId);
-                            if (postedBook) {
-                                book.isPosted = true; // 書籍が投稿されていることをマーキング
-                            }
-                        });
-                        console.log('amazingBooks:', amazingBooks);
-                    }
+                    console.log('amazingBooks:', amazingBooks);
                 }
             } catch (error) {
                 console.error('Failed to fetch bookPosts:', error);
@@ -236,9 +236,9 @@ const SearchResults = ({ query }: Props) => {
             return;
         }
 
-        // 登録した書籍のisPostedをtrueに設定し、検索結果を更新
+        // 登録した書籍の投稿有無をtrueに設定し、検索結果を更新
         const updatedResults = searchResults.map((item) =>
-            item.googleId === googleId ? { ...item, isPosted: true } : item
+            item.googleId === googleId ? { ...item, existsMyPost: true, existsSomethingPost: true } : item
         );
         setSearchResults(updatedResults);
     };
