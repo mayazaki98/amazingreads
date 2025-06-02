@@ -23,6 +23,11 @@ export async function apiAuth(req: Request): Promise<{ errorResponse: Response |
 
         // 認証成功時は userId を取得
         userId = payload.sub;
+        if (!userId) {
+            errorResponse = Response.json({ error: 'Unauthorized' }, { status: 401 });
+            return { errorResponse, userId };
+        }
+
         return { errorResponse, userId };
     } catch (error) {
         console.error('Token verification failed:', error);
