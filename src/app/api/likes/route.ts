@@ -4,7 +4,7 @@ import { apiAuth } from '@/utils/apiAuth';
 // POST: いいね追加
 export async function POST(req: Request) {
     const { errorResponse, userId } = await apiAuth(req);
-    if (errorResponse || !userId) return errorResponse;
+    if (errorResponse || !userId) return errorResponse!;
 
     const { bookPostId } = await req.json();
     if (!bookPostId) {
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 // DELETE: いいね削除
 export async function DELETE(req: Request) {
     const { errorResponse, userId } = await apiAuth(req);
-    if (errorResponse || !userId) return errorResponse;
+    if (errorResponse || !userId) return errorResponse!;
 
     const { bookPostId } = await req.json();
     if (!bookPostId) {
