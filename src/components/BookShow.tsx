@@ -150,19 +150,21 @@ const BookShow = ({ book, userId }: Props) => {
                                     <p className="text-gray-800 font-semibold">{post.comment}</p>
                                     <p className="text-gray-600 text-sm">評価: {post.rank}</p>
                                     <p className="text-gray-500 text-sm">ステータス: {post.status}</p>
-                                    {userId && (
-                                        <button
-                                            className="ml-2 flex items-center gap-1 text-pink-600 hover:scale-110 transition-transform"
-                                            disabled={liking === post.id}
-                                            onClick={() => handleLike(post.id, post.likes.length === 0)}
-                                        >
-                                            <FontAwesomeIcon
-                                                icon={post.likes.length > 0 ? solidHeart : regularHeart}
-                                                className={post.likes.length > 0 ? 'text-pink-600' : 'text-gray-400'}
-                                            />
-                                            <span className="ml-1">{post._count.likes}</span>
-                                        </button>
-                                    )}
+                                    <button
+                                        className={`ml-2 flex items-center gap-1 text-pink-600 transition-transform ${
+                                            liking === post.id || userId == null || userId !== post.userId
+                                                ? ''
+                                                : 'hover:scale-110'
+                                        }`}
+                                        disabled={liking === post.id || userId == null || userId !== post.userId}
+                                        onClick={() => handleLike(post.id, post.likes.length === 0)}
+                                    >
+                                        <FontAwesomeIcon
+                                            icon={post.likes.length > 0 ? solidHeart : regularHeart}
+                                            className={userId ? 'text-pink-600' : 'text-gray-400'}
+                                        />
+                                        <span className="ml-1">{post._count.likes}</span>
+                                    </button>
                                 </li>
                             ))}
                         </ul>
