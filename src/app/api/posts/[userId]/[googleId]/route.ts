@@ -65,6 +65,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ userId: 
         });
         return Response.json(updatedBookPost);
     } catch (error) {
+        console.error(error);
         return Response.json({ error: 'Failed to update bookPost', details: error }, { status: 400 });
     }
 }
