@@ -1,7 +1,7 @@
 'use client';
 
 import { BookWithPostsAndUser } from '@/utils/amazingTypes';
-import { BookPost, Like, User } from '@prisma/client';
+import { BookPost, Like, Reply, User } from '@prisma/client';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import Profile from './Profile';
@@ -12,6 +12,8 @@ import { faHeart as regularHeart } from '@fortawesome/free-regular-svg-icons';
 // 追加: 星アイコン
 import { faStar as solidStar } from '@fortawesome/free-solid-svg-icons';
 import { faStar as regularStar } from '@fortawesome/free-regular-svg-icons';
+// 追加: リプライアイコン
+import { faReply } from '@fortawesome/free-solid-svg-icons';
 
 type Props = {
     book: BookWithPostsAndUser;
@@ -37,6 +39,10 @@ const BookShow = ({ book, userId }: Props) => {
     // ★ ポップアップ外クリックで閉じる
     // 追加: 編集用state
     const [editingStatusPostId, setEditingStatusPostId] = useState<string | null>(null);
+    const [editingCommentPostId, setEditingCommentPostId] = useState<string | null>(null);
+    const [editingComment, setEditingComment] = useState<string>('');
+    const [replyOpenPostId, setReplyOpenPostId] = useState<string | null>(null);
+    const [replyInput, setReplyInput] = useState<{ [postId: string]: string }>({});
 
     useEffect(() => {
         if (showProfile) {
@@ -160,7 +166,7 @@ const BookShow = ({ book, userId }: Props) => {
             });
             if (!response.ok) {
                 console.error('失敗 ', response.body);
-                throw new Error('評価の更新に失敗しました');
+                throw new Error('投稿の更新に失敗しました');
             }
             // ローカルstateを即時更新
             setPosts((prevPosts) =>
@@ -173,6 +179,64 @@ const BookShow = ({ book, userId }: Props) => {
         } catch (e) {
             console.error(e);
         }
+    };
+
+    // コメント編集開始
+    const handleEditComment = (post: BookPost) => {
+        setEditingCommentPostId(post.id);
+        setEditingComment(post.comment ?? '');
+    };
+
+    // コメント編集確定
+    const handleUpdateComment = async (post: BookPost) => {
+        await handlePostUpdate({ ...post, comment: editingComment });
+        setEditingCommentPostId(null);
+    };
+
+    // 仮のリプライ送信処理
+    const handleReplySubmit = async (postId: string) => {
+        // ここでAPI送信などを実装
+        // 例: await fetch('/api/replies', { ... })
+        // 送信後、入力欄をクリア
+
+        try {
+            const token = await getToken();
+            const response = await fetch(`/api/replies/${postId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    content: replyInput[postId]?.trim(),
+                    userId: userId,
+                    bookPostId: postId,
+                }),
+            });
+            if (!response.ok) {
+                console.error('失敗 ', response.body);
+                throw new Error('リプライの投稿に失敗しました');
+            }
+
+            const newReply: Reply & { user: User } = await response.json();
+
+            // ローカルstateを即時更新
+            setPosts((prevPosts) =>
+                prevPosts.map((prevPost) =>
+                    prevPost.id === postId
+                        ? {
+                              ...prevPost,
+                              replies: [...(prevPost.replies || []), newReply],
+                          }
+                        : prevPost
+                )
+            );
+        } catch (e) {
+            console.error(e);
+        }
+
+        setReplyInput((prev) => ({ ...prev, [postId]: '' }));
+        // 必要ならsetPostsでローカルstateも更新
     };
 
     return (
@@ -232,13 +296,25 @@ const BookShow = ({ book, userId }: Props) => {
                                                     key={i}
                                                     type="button"
                                                     className="focus:outline-none cursor-pointer transition-transform"
+                                                    style={{ padding: 0, background: 'none', border: 'none' }}
                                                     onClick={() => handlePostUpdate({ ...post, rank: i + 1 })}
                                                     aria-label={`評価 ${i + 1} にする`}
                                                 >
-                                                    <FontAwesomeIcon
-                                                        icon={i < (post.rank ?? 0) ? solidStar : regularStar}
-                                                        className="mr-0.5"
-                                                    />
+                                                    <span
+                                                        style={{
+                                                            display: 'inline-block',
+                                                            transition: 'transform 0.15s',
+                                                        }}
+                                                        onMouseEnter={(e) =>
+                                                            (e.currentTarget.style.transform = 'scale(1.3)')
+                                                        }
+                                                        onMouseLeave={(e) => (e.currentTarget.style.transform = '')}
+                                                    >
+                                                        <FontAwesomeIcon
+                                                            icon={i < (post.rank ?? 0) ? solidStar : regularStar}
+                                                            className="mr-0.5"
+                                                        />
+                                                    </span>
                                                 </button>
                                             ) : (
                                                 <FontAwesomeIcon
@@ -299,23 +375,114 @@ const BookShow = ({ book, userId }: Props) => {
                                         <p className="text-gray-500 text-sm">{getStatusLabel(post.status ?? '')}</p>
                                     )}
                                     {/* コメント */}
-                                    <p className="text-gray-800">{post.comment}</p>
-                                    {/* いいね */}
-                                    <button
-                                        className={`ml-2 flex items-center gap-1 text-pink-600 transition-transform ${
-                                            liking === post.id || userId == null || userId === post.userId
-                                                ? ''
-                                                : 'hover:scale-110 cursor-pointer'
-                                        }`}
-                                        disabled={liking === post.id || userId == null || userId === post.userId}
-                                        onClick={() => handleLike(post.id, post.likes.length === 0)}
-                                    >
-                                        <FontAwesomeIcon
-                                            icon={post.likes.length > 0 ? solidHeart : regularHeart}
-                                            className={userId ? 'text-pink-600' : 'text-gray-400'}
-                                        />
-                                        <span className="ml-1">{post._count.likes}</span>
-                                    </button>
+                                    {post.userId === userId ? (
+                                        editingCommentPostId === post.id ? (
+                                            <div className="flex items-start gap-2 mt-1">
+                                                <textarea
+                                                    className="border rounded px-2 py-1 w-full text-gray-800"
+                                                    value={editingComment}
+                                                    onChange={(e) => setEditingComment(e.target.value)}
+                                                    rows={2}
+                                                />
+                                                <button
+                                                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                                                    onClick={() => handleUpdateComment(post)}
+                                                >
+                                                    更新
+                                                </button>
+                                                <button
+                                                    className="ml-1 text-gray-500 hover:text-gray-800"
+                                                    onClick={() => setEditingCommentPostId(null)}
+                                                >
+                                                    キャンセル
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <p
+                                                className="text-gray-800 cursor-pointer hover:underline"
+                                                onClick={() => handleEditComment(post)}
+                                                title="コメントを編集"
+                                            >
+                                                {post.comment}
+                                            </p>
+                                        )
+                                    ) : (
+                                        <p className="text-gray-800">{post.comment}</p>
+                                    )}
+                                    {/* いいね・リプライボタン */}
+                                    <div className="flex items-center gap-2 mt-2">
+                                        {/* いいねボタン */}
+                                        <button
+                                            className={`ml-2 flex items-center gap-1 text-pink-600 transition-transform ${
+                                                liking === post.id || userId == null
+                                                    ? ''
+                                                    : 'hover:scale-110 cursor-pointer'
+                                            }`}
+                                            disabled={liking === post.id || userId == null}
+                                            onClick={() => handleLike(post.id, post.likes.length === 0)}
+                                        >
+                                            <FontAwesomeIcon
+                                                icon={post.likes.length > 0 ? solidHeart : regularHeart}
+                                                className={userId ? 'text-pink-600' : 'text-gray-400'}
+                                            />
+                                            <span className="ml-1">{post._count.likes}</span>
+                                        </button>
+                                        {/* リプライボタン */}
+                                        <button
+                                            className="flex items-center gap-1 text-blue-600 hover:scale-110 cursor-pointer transition-transform"
+                                            onClick={() =>
+                                                setReplyOpenPostId(replyOpenPostId === post.id ? null : post.id)
+                                            }
+                                        >
+                                            <FontAwesomeIcon icon={faReply} />
+                                            <span className="ml-1">リプライ</span>
+                                            <span className="ml-1 text-xs text-gray-500">
+                                                {/* 件数表示: post.replies?.length を想定 */}
+                                                {post.replies ? post.replies.length : 0}
+                                            </span>
+                                        </button>
+                                    </div>
+                                    {/* リプライ表示 */}
+                                    {replyOpenPostId === post.id && (
+                                        <div className="mt-2 ml-6 border-l-2 border-blue-200 pl-4">
+                                            {post.replies && post.replies.length > 0 ? (
+                                                <ul className="space-y-2">
+                                                    {post.replies.map((reply: Reply & { user: User }) => (
+                                                        <li key={reply.id} className="text-sm text-gray-700">
+                                                            <span className="font-bold">
+                                                                {reply.user?.name || '名無しさん'}:{' '}
+                                                            </span>
+                                                            {reply.content}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="text-xs text-gray-400">リプライはまだありません。</p>
+                                            )}
+                                            {/* リプライ投稿欄 */}
+                                            <div className="mt-2 flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    className="border rounded px-2 py-1 flex-1 text-sm"
+                                                    placeholder="リプライを入力..."
+                                                    value={replyInput[post.id] ?? ''}
+                                                    onChange={(e) =>
+                                                        setReplyInput((prev) => ({
+                                                            ...prev,
+                                                            [post.id]: e.target.value,
+                                                        }))
+                                                    }
+                                                />
+                                                <button
+                                                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors text-sm"
+                                                    onClick={() => handleReplySubmit(post.id)}
+                                                    disabled={!replyInput[post.id]?.trim()}
+                                                >
+                                                    投稿
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </li>
                             ))}
                         </ul>
